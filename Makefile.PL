@@ -20,11 +20,12 @@ my %WriteMakefileArgs = (
   'LICENSE' => 'perl',
   'NAME' => 'Plack::Client',
   'PREREQ_PM' => {
+    'Class::Load' => '0',
     'HTTP::Request' => '0',
     'Plack' => '0.9910',
     'Plack::App::Proxy' => '0'
   },
-  'VERSION' => '0.01',
+  'VERSION' => '0.02',
   'test' => {
     'TESTS' => 't/*.t'
   }

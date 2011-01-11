@@ -13,13 +13,14 @@ meta-spec:
   version: 1.4
 name: Plack-Client
 requires:
+  Class::Load: 0
   HTTP::Request: 0
   Plack: 0.9910
   Plack::App::Proxy: 0
   perl: 5.8.1
 resources:
   repository: git://github.com/doy/plack-client.git
-version: 0.01
+version: 0.02
 x_Dist_Zilla:
   plugins:
     -

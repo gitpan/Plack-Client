@@ -1,15 +1,16 @@
 package Plack::Client;
 BEGIN {
-  $Plack::Client::VERSION = '0.01'; # TRIAL
+  $Plack::Client::VERSION = '0.02'; # TRIAL
 }
 use strict;
 use warnings;
 # ABSTRACT: abstract interface to remote web servers and local PSGI apps
 
+use Carp;
+use Class::Load;
 use HTTP::Message::PSGI;
 use HTTP::Request;
-use Plack::App::Proxy;
-use Plack::Middleware::ContentLength;
+use Plack::Request;
 use Plack::Response;
 use Scalar::Util qw(blessed reftype);
 
@@ -19,22 +20,54 @@ sub new {
     my $class = shift;
     my %params = @_;
 
-    die 'apps must be a hashref'
-        if exists($params{apps}) && ref($params{apps}) ne 'HASH';
+    my %backends;
+    for my $scheme (keys %params) {
+        my $backend = $params{$scheme};
+        if (blessed($backend)) {
+            croak "Backends must support the app_from_request method"
+                unless $backend->can('app_from_request');
+            $backends{$scheme} = $backend;
+        }
+        elsif (ref($backend)) {
+            (my $normal_scheme = $scheme) =~ s/-/_/g;
+            my $backend_class = "Plack::Client::Backend::$normal_scheme";
+            Class::Load::load_class($backend_class);
+            croak "Backends must support the app_from_request method"
+                unless $backend_class->can('app_from_request');
+            croak "Backend classes must have a constructor"
+                unless $backend_class->can('new');
+            $backends{$scheme} = $backend_class->new(
+                reftype($backend) eq 'HASH'  ? %$backend
+              : reftype($backend) eq 'ARRAY' ? @$backend
+              :                                $$backend
+            );
+        }
+        else {
+            croak 'XXX';
+        }
+    }
 
     bless {
-        apps => $params{apps},
+        backends => \%backends,
     }, $class;
 }
 
 
-sub apps { shift->{apps} }
-
-
-sub app_for {
+sub backend {
     my $self = shift;
-    my ($for) = @_;
-    return $self->apps->{$for};
+    my ($scheme) = @_;
+    $scheme = $scheme->scheme if blessed($scheme);
+    my $backend = $self->_backend($scheme);
+    return $backend if defined $backend;
+    $scheme = 'http' if $scheme eq 'https';
+    $scheme =~ s/-ssl$//;
+    return $self->_backend($scheme);
+}
+
+sub _backend {
+    my $self = shift;
+    my ($scheme) = @_;
+    return $self->{backends}->{$scheme};
 }
 
 
@@ -63,7 +96,7 @@ sub _parse_request_args {
             return $self->_request_from_plack_request(@_);
         }
         else {
-            die 'Request object must be either an HTTP::Request or a Plack::Request';
+            croak 'Request object must be either an HTTP::Request or a Plack::Request';
         }
     }
     elsif ((reftype($_[0]) || '') eq 'HASH') {
@@ -85,7 +118,7 @@ sub _request_from_plack_request {
     my $self = shift;
     my ($req) = @_;
 
-    return ($self->_app_from_req($req), $req->env);
+    return ($self->_app_from_request($req), $req->env);
 }
 
 sub _request_from_env {
@@ -102,24 +135,20 @@ sub _http_request_to_env {
     my $self = shift;
     my ($req) = @_;
 
-    my $scheme = $req->uri->scheme;
-    my $app_name;
+    my $scheme       = $req->uri->scheme;
+    my $original_uri = $req->uri->clone;
+
     # hack around with this - psgi requires a host and port to exist, and
     # for the scheme to be either http or https
-    if ($scheme eq 'psgi-local') {
-        $app_name = $req->uri->authority;
-        $req->uri->scheme('http');
+    if ($scheme ne 'http' && $scheme ne 'https') {
+        if ($scheme =~ /-ssl$/) {
+            $req->uri->scheme('https');
+        }
+        else {
+            $req->uri->scheme('http');
+        }
         $req->uri->host('Plack::Client');
         $req->uri->port(-1);
-    }
-    elsif ($scheme eq 'psgi-local-ssl') {
-        $app_name = $req->uri->authority;
-        $req->uri->scheme('https');
-        $req->uri->host('Plack::Client');
-        $req->uri->port(-1);
-    }
-    elsif ($scheme ne 'http' && $scheme ne 'https') {
-        die 'Invalid URL scheme ' . $scheme;
     }
 
     # work around http::message::psgi bug - see github issue 163 for plack
@@ -132,38 +161,21 @@ sub _http_request_to_env {
     # work around http::message::psgi bug - see github issue 150 for plack
     $env->{CONTENT_LENGTH} ||= length($req->content);
 
-    $env->{'plack.client.url_scheme'} = $scheme;
-    $env->{'plack.client.app_name'}   = $app_name
-        if defined $app_name;
+    $env->{'plack.client.original_uri'} = $original_uri;
 
     return $env;
 }
 
-sub _app_from_req {
+sub _app_from_request {
     my $self = shift;
     my ($req) = @_;
 
-    my $uri = $req->uri;
-    my $scheme = $req->env->{'plack.client.url_scheme'} || $uri->scheme;
-    my $app_name = $req->env->{'plack.client.app_name'};
+    my $uri = $req->env->{'plack.client.original_uri'} || $req->uri;
 
-    my $app;
-    if ($scheme eq 'psgi-local') {
-        if (!defined $app_name) {
-            $app_name = $uri->authority;
-            $app_name =~ s/(.*):.*/$1/; # in case a port was added at some point
-        }
-        $app = $self->app_for($app_name);
-        die "Unknown app: $app_name" unless $app;
-        $app = Plack::Middleware::ContentLength->wrap($app);
-    }
-    elsif ($scheme eq 'http' || $scheme eq 'https') {
-        my $uri = $uri->clone;
-        $uri->path('/');
-        $app = Plack::App::Proxy->new(remote => $uri->as_string)->to_app;
-    }
+    my $backend = $self->backend($uri);
+    my $app = $backend->app_from_request($req);
 
-    die "Couldn't find app" unless $app;
+    croak "Couldn't find app" unless $app;
 
     return $app;
 }
@@ -183,7 +195,11 @@ sub _resolve_response {
         });
     }
 
-    use Data::Dumper; die Dumper($psgi_res) unless ref($psgi_res) eq 'ARRAY';
+    if (ref($psgi_res) ne 'ARRAY') {
+        require Data::Dumper;
+        croak "Unable to understand app response:\n"
+            . Data::Dumper::Dumper($psgi_res);
+    }
 
     return $psgi_res;
 }
@@ -207,12 +223,15 @@ Plack::Client - abstract interface to remote web servers and local PSGI apps
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 SYNOPSIS
 
   use Plack::Client;
-  my $client = Plack::Client->new({ myapp => sub { ... } });
+  my $client = Plack::Client->new(
+      'psgi-local' => { myapp => sub { ... } },
+      'http'       => {},
+  );
   my $res1 = $client->get('http://google.com/');
   my $res2 = $client->post(
       'psgi-local://myapp/foo.html',
@@ -237,50 +256,48 @@ both local and remote services through a common api, so that services can be
 moved between servers with only a small change in configuration, rather than
 having to change the actual code involved in accessing it. This module solves
 this issue by providing an API similar to L<LWP::UserAgent>, but using an
-underlying implementation consisting entirely of Plack apps. Local apps are
-distinguished from remote apps by the URL scheme: remote URLs use C<http> or
-C<https>, while local URLs use C<psgi-local> or C<psgi-local-ssl>. For
-instance, accessing C</foo> on a remote application would look like this:
-C<< $client->get('http://some.other.server.com/foo') >>, and accessing the same
-thing on a local application would look like this:
-C<< $client->get('psgi-local://myapp/foo') >>, but they will both give the same
-result. This API allows a simple config file change to be all that's necessary
-to migrate your service to a different server.
+underlying implementation consisting entirely of Plack apps. The app to use for
+a given request is determined based on the URL schema; for instance,
+C<< $client->get('http://example.com/foo') >> would call a L<Plack::App::Proxy>
+app to retrieve a remote resource, while
+C<< $client->get('psgi-local://myapp/foo') >> would directly call the C<myapp>
+app coderef that was passed into the constructor for the
+L<psgi-local|Plack::Client::Backend::psgi_local> backend. This API allows a
+simple config file change to be all that's necessary to migrate your service to
+a different server. The list of available URL schemas is determined by the
+arguments passed to the constructor, which map schemas to backends which return
+appropriate apps based on the request.
 
 =head1 METHODS
 
 =head2 new
 
   my $client = Plack::Client->new(
-      apps => {
-          foo => sub { ... },
-          bar => MyApp->new->to_app,
-      }
+      'psgi-local => {
+          apps => {
+              foo => sub { ... },
+              bar => MyApp->new->to_app,
+          }
+      },
+      'http' => Plack::Client::Backend::http->new,
   )
 
-Constructor. Takes a hash of arguments, with these keys being valid:
+Constructor. Takes a hash of arguments, where keys are URL schemas, and values
+are backends which handle those schemas. Hashref and arrayref values are also
+valid, and will be dereferenced and passed to the constructor of the default
+backend for that scheme (the class C<Plack::Client::Backend::$scheme>, where
+C<$scheme> has dashes replaced by underscores).
 
-=over 4
+=head2 backend
 
-=item apps
+  $client->backend('http');
+  $client->backend($req->uri);
 
-A mapping of local app names to PSGI app coderefs. These are the apps that will
-be available via the C<psgi-local> URL scheme.
-
-=back
-
-=head2 apps
-
-  my $apps = $client->apps;
-
-Returns the C<apps> hashref that was passed to the constructor.
-
-=head2 app_for
-
-  my $app = $client->app_for('foo');
-
-Returns the app corresponding to the given app name (or undef, if no such app
-exists).
+Returns the backend object used to generate apps for the given URL scheme or
+URI object. By default, the SSL variant of a scheme will be handled by the same
+backend as the non-SSL variant, although this can be overridden by explicitly
+specifying a backend for the SSL variant. SSL variants are indicated by
+appending C<-ssl> to the scheme (or by being equal to C<https>).
 
 =head2 request
 

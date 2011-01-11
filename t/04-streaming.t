@@ -42,7 +42,7 @@ test_tcp_plackup(
     sub {
         my $base_uri = shift;
 
-        test_responses($base_uri, Plack::Client->new);
+        test_responses($base_uri, Plack::Client->new(http => {}));
     },
 );
 
@@ -52,7 +52,10 @@ test_tcp_plackup(
     };
     my $base_uri = 'psgi-local://foo';
 
-    test_responses($base_uri, Plack::Client->new(apps => $apps));
+    test_responses(
+        $base_uri,
+        Plack::Client->new('psgi-local' => {apps => $apps})
+    );
 }
 
 sub test_responses {
@@ -136,9 +139,7 @@ sub test_responses {
         $uri->path('/') unless $uri->path; # XXX: work around plack bug
         my $env = HTTP::Request->new(GET => $uri)->to_psgi;
         $env->{CONTENT_LENGTH} = 0; # XXX: work around plack bug
-        $env->{'plack.client.url_scheme'} = $base->scheme;
-        $env->{'plack.client.app_name'} = $base->authority
-            if $base->scheme eq 'psgi-local';
+        $env->{'plack.client.original_uri'} = $base;
         response_is(
             $client->request($env),
             200,
@@ -154,9 +155,7 @@ sub test_responses {
         $uri->path('/') unless $uri->path; # XXX: work around plack bug
         my $env = HTTP::Request->new(GET => $uri)->to_psgi;
         $env->{CONTENT_LENGTH} = 0; # XXX: work around plack bug
-        $env->{'plack.client.url_scheme'} = $base->scheme;
-        $env->{'plack.client.app_name'} = $base->authority
-            if $base->scheme eq 'psgi-local';
+        $env->{'plack.client.original_uri'} = $base;
         response_is(
             $client->request(Plack::Request->new($env)),
             200,

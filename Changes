@@ -1,4 +1,9 @@
 Revision history for Plack-Client
 
-0.01  2011-01-07
+0.02  2011-01-11
+      - url schemes are now handled by separate backends, which must be
+        explicitly requested in the constructor
+      - lots of other refactoring
+
+0.01-TRIAL  2011-01-07
       - Initial release

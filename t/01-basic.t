@@ -10,7 +10,7 @@ test_tcp_plackup(
     sub {
         my $base_url = shift;
 
-        my $client = Plack::Client->new;
+        my $client = Plack::Client->new(http => {});
         isa_ok($client, 'Plack::Client');
 
         {
@@ -35,11 +35,8 @@ test_tcp_plackup(
             ]
         },
     };
-    my $client = Plack::Client->new(apps => $apps);
+    my $client = Plack::Client->new('psgi-local' => {apps => $apps});
     isa_ok($client, 'Plack::Client');
-    is($client->apps, $apps, "got apps back");
-    is($client->app_for('foo'), $apps->{foo}, "got the right app");
-    is($client->app_for('bar'), undef, "didn't get nonexistent app");
 
     {
         my $res = $client->get('psgi-local://foo/');

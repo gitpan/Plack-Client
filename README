@@ -1,7 +1,7 @@
 
 
 This archive contains the distribution Plack-Client,
-version 0.01:
+version 0.02:
 
   abstract interface to remote web servers and local PSGI apps
 

@@ -25,7 +25,7 @@ my %WriteMakefileArgs = (
     'Plack' => '0.9910',
     'Plack::App::Proxy' => '0'
   },
-  'VERSION' => '0.02',
+  'VERSION' => '0.03',
   'test' => {
     'TESTS' => 't/*.t'
   }

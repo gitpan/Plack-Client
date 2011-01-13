@@ -1,6 +1,6 @@
 package Plack::Client::Backend::psgi_local;
 BEGIN {
-  $Plack::Client::Backend::psgi_local::VERSION = '0.02'; # TRIAL
+  $Plack::Client::Backend::psgi_local::VERSION = '0.03';
 }
 use strict;
 use warnings;
@@ -9,18 +9,21 @@ use warnings;
 use Carp;
 use Plack::Middleware::ContentLength;
 
+use base 'Plack::Client::Backend';
+
 
 
 sub new {
     my $class = shift;
     my %params = @_;
+    my $self = $class->SUPER::new(@_);
 
     croak 'apps must be a hashref'
         if ref($params{apps}) ne 'HASH';
 
-    bless {
-        apps => $params{apps},
-    }, $class;
+    $self->{apps} = $params{apps};
+
+    return $self;
 }
 
 sub _apps { shift->{apps} }
@@ -62,7 +65,7 @@ Plack::Client::Backend::psgi_local - backend for handling local app requests
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 

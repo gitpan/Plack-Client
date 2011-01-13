@@ -1,6 +1,6 @@
 package Plack::Client::Backend::http;
 BEGIN {
-  $Plack::Client::Backend::http::VERSION = '0.02'; # TRIAL
+  $Plack::Client::Backend::http::VERSION = '0.03';
 }
 use strict;
 use warnings;
@@ -8,15 +8,17 @@ use warnings;
 
 use Plack::App::Proxy;
 
+use base 'Plack::Client::Backend';
+
 
 
 sub new {
     my $class = shift;
-    my %params = @_;
+    my $self = $class->SUPER::new(@_);
 
-    bless {
-        proxy => Plack::App::Proxy->new->to_app,
-    }, $class;
+    $self->{proxy} = Plack::App::Proxy->new->to_app;
+
+    return $self;
 }
 
 sub _proxy { shift->{proxy} }
@@ -43,7 +45,7 @@ Plack::Client::Backend::http - backend for handling HTTP requests
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 

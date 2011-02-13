@@ -1,6 +1,6 @@
 package Plack::Client::Backend;
 BEGIN {
-  $Plack::Client::Backend::VERSION = '0.03';
+  $Plack::Client::Backend::VERSION = '0.04';
 }
 use strict;
 use warnings;
@@ -40,7 +40,7 @@ Plack::Client::Backend - turns a Plack::Request into a PSGI app
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 

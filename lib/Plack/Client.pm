@@ -1,6 +1,6 @@
 package Plack::Client;
 BEGIN {
-  $Plack::Client::VERSION = '0.03';
+  $Plack::Client::VERSION = '0.04';
 }
 use strict;
 use warnings;
@@ -23,7 +23,7 @@ sub new {
     my %backends;
     for my $scheme (keys %params) {
         my $backend = $params{$scheme};
-        if ((blessed($backend) || '') eq 'Plack::Client::Backend') {
+        if (blessed($backend) && $backend->isa('Plack::Client::Backend')) {
             $backends{$scheme} = $backend->as_code;
         }
         elsif (reftype($backend) eq 'CODE') {
@@ -150,15 +150,7 @@ sub _http_request_to_env {
         $req->uri->port(-1);
     }
 
-    # work around http::message::psgi bug - see github issue 163 for plack
-    if (!$req->uri->path) {
-        $req->uri->path('/');
-    }
-
     my $env = $req->to_psgi;
-
-    # work around http::message::psgi bug - see github issue 150 for plack
-    $env->{CONTENT_LENGTH} ||= length($req->content);
 
     $env->{'plack.client.original_uri'} = $original_uri;
 
@@ -222,7 +214,7 @@ Plack::Client - abstract interface to remote web servers and local PSGI apps
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
@@ -239,8 +231,6 @@ version 0.03
   );
 
 =head1 DESCRIPTION
-
-B<NOTE: This is a trial release while I work out what the API should be. Use at your own risk!>
 
 A common task required in more complicated web applications is communicating
 with various web services for different tasks. These web services may be spread

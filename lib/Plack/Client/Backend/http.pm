@@ -1,6 +1,6 @@
 package Plack::Client::Backend::http;
 BEGIN {
-  $Plack::Client::Backend::http::VERSION = '0.03';
+  $Plack::Client::Backend::http::VERSION = '0.04';
 }
 use strict;
 use warnings;
@@ -30,6 +30,7 @@ sub app_from_request {
 
     my $uri = $req->uri->clone;
     $uri->path('/');
+    $uri->query(undef);
     $req->env->{'plack.proxy.remote'} = $uri->as_string;
     return $self->_proxy;
 }
@@ -45,7 +46,7 @@ Plack::Client::Backend::http - backend for handling HTTP requests
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 

@@ -22,10 +22,10 @@ my %WriteMakefileArgs = (
   'PREREQ_PM' => {
     'Class::Load' => '0',
     'HTTP::Request' => '0',
-    'Plack' => '0.9910',
+    'Plack' => '0.9966',
     'Plack::App::Proxy' => '0'
   },
-  'VERSION' => '0.03',
+  'VERSION' => '0.04',
   'test' => {
     'TESTS' => 't/*.t'
   }

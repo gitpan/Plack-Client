@@ -23,7 +23,7 @@
          "requires" : {
             "Class::Load" : 0,
             "HTTP::Request" : 0,
-            "Plack" : "0.9910",
+            "Plack" : "0.9966",
             "Plack::App::Proxy" : 0,
             "perl" : "v5.8.1"
          }
@@ -36,7 +36,7 @@
          "url" : "git://github.com/doy/plack-client.git"
       }
    },
-   "version" : "0.03",
+   "version" : "0.04",
    "x_Dist_Zilla" : {
       "plugins" : [
          {

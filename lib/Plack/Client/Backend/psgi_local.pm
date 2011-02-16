@@ -1,6 +1,6 @@
 package Plack::Client::Backend::psgi_local;
 BEGIN {
-  $Plack::Client::Backend::psgi_local::VERSION = '0.04';
+  $Plack::Client::Backend::psgi_local::VERSION = '0.05';
 }
 use strict;
 use warnings;
@@ -65,7 +65,7 @@ Plack::Client::Backend::psgi_local - backend for handling local app requests
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 

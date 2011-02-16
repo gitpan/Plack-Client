@@ -11,7 +11,10 @@ use ExtUtils::MakeMaker 6.31;
 my %WriteMakefileArgs = (
   'ABSTRACT' => 'abstract interface to remote web servers and local PSGI apps',
   'AUTHOR' => 'Jesse Luehrs <doy at tozt dot net>',
-  'BUILD_REQUIRES' => {},
+  'BUILD_REQUIRES' => {
+    'Test::More' => '0.88',
+    'Test::TCP' => '0'
+  },
   'CONFIGURE_REQUIRES' => {
     'ExtUtils::MakeMaker' => '6.31'
   },
@@ -23,9 +26,9 @@ my %WriteMakefileArgs = (
     'Class::Load' => '0',
     'HTTP::Request' => '0',
     'Plack' => '0.9966',
-    'Plack::App::Proxy' => '0'
+    'Plack::App::Proxy' => '0.16'
   },
-  'VERSION' => '0.04',
+  'VERSION' => '0.05',
   'test' => {
     'TESTS' => 't/*.t'
   }

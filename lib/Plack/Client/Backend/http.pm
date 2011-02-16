@@ -1,6 +1,6 @@
 package Plack::Client::Backend::http;
 BEGIN {
-  $Plack::Client::Backend::http::VERSION = '0.04';
+  $Plack::Client::Backend::http::VERSION = '0.05';
 }
 use strict;
 use warnings;
@@ -46,7 +46,7 @@ Plack::Client::Backend::http - backend for handling HTTP requests
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 

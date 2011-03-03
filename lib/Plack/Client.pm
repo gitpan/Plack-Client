@@ -1,6 +1,6 @@
 package Plack::Client;
 BEGIN {
-  $Plack::Client::VERSION = '0.05';
+  $Plack::Client::VERSION = '0.06';
 }
 use strict;
 use warnings;
@@ -214,7 +214,7 @@ Plack::Client - abstract interface to remote web servers and local PSGI apps
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 
@@ -339,6 +339,8 @@ C<bug-plack-client at rt.cpan.org>, or browse to
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Plack-Client>.
 
 =head1 SEE ALSO
+
+Please see those modules/websites for more information related to this module.
 
 =over 4
 

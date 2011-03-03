@@ -1,6 +1,6 @@
 package Plack::Client::Backend::http;
 BEGIN {
-  $Plack::Client::Backend::http::VERSION = '0.05';
+  $Plack::Client::Backend::http::VERSION = '0.06';
 }
 use strict;
 use warnings;
@@ -14,9 +14,15 @@ use base 'Plack::Client::Backend';
 
 sub new {
     my $class = shift;
+    my %args = @_;
+
+    $args{proxy} ||= Plack::App::Proxy->new(
+        exists $args{proxy_args} ? $args{proxy_args} : ()
+    );
+
     my $self = $class->SUPER::new(@_);
 
-    $self->{proxy} = Plack::App::Proxy->new->to_app;
+    $self->{proxy} = $args{proxy}->to_app;
 
     return $self;
 }
@@ -46,7 +52,7 @@ Plack::Client::Backend::http - backend for handling HTTP requests
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 
@@ -67,7 +73,19 @@ L<Plack::App::Proxy> to make the request.
 
 =head2 new
 
-Constructor. Takes no arguments.
+Constructor. Takes two optional arguments:
+
+=over 4
+
+=item proxy_args
+
+Hashref of arguments to pass to the L<Plack::App::Proxy> constructor.
+
+=item proxy
+
+L<Plack::App::Proxy> object to use for requests.
+
+=back
 
 =head2 app_from_request
 
@@ -76,11 +94,13 @@ HTTP resource.
 
 =head1 SEE ALSO
 
+Please see those modules/websites for more information related to this module.
+
 =over 4
 
 =item *
 
-L<Plack::Client>
+L<Plack::Client|Plack::Client>
 
 =back
 

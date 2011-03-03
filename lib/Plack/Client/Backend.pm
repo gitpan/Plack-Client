@@ -1,6 +1,6 @@
 package Plack::Client::Backend;
 BEGIN {
-  $Plack::Client::Backend::VERSION = '0.05';
+  $Plack::Client::Backend::VERSION = '0.06';
 }
 use strict;
 use warnings;
@@ -40,7 +40,7 @@ Plack::Client::Backend - turns a Plack::Request into a PSGI app
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 
@@ -79,11 +79,13 @@ Returns a coderef which will call L</app_from_request> as a method.
 
 =head1 SEE ALSO
 
+Please see those modules/websites for more information related to this module.
+
 =over 4
 
 =item *
 
-L<Plack::Client>
+L<Plack::Client|Plack::Client>
 
 =back
 
